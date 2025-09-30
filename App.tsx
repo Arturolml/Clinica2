@@ -8,7 +8,6 @@ import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import PatientListPage from './pages/PatientListPage';
 import HistoryFormPage from './pages/HistoryFormPage';
-import PatientFormPage from './pages/PatientFormPage';
 import PatientDetailPage from './pages/PatientDetailPage';
 
 
@@ -22,7 +21,7 @@ const App: React.FC = () => {
             <Route 
                 path="/admin" 
                 element={
-                    <ProtectedRoute roles={['admin']}>
+                    <ProtectedRoute roles={['ADMIN']}>
                         <Layout>
                             <AdminPage />
                         </Layout>
@@ -33,37 +32,17 @@ const App: React.FC = () => {
             <Route 
                 path="/patients" 
                 element={
-                    <ProtectedRoute roles={['doctor']}>
+                    <ProtectedRoute roles={['MEDICO']}>
                         <Layout>
                             <PatientListPage />
                         </Layout>
                     </ProtectedRoute>
                 } 
             />
-             <Route 
-                path="/patient/new" 
-                element={
-                    <ProtectedRoute roles={['doctor']}>
-                        <Layout>
-                            <PatientFormPage />
-                        </Layout>
-                    </ProtectedRoute>
-                } 
-            />
             <Route 
-                path="/patient/edit/:patientId" 
+                path="/patient/record/:recordNumber" 
                 element={
-                    <ProtectedRoute roles={['doctor']}>
-                        <Layout>
-                             <PatientFormPage />
-                        </Layout>
-                    </ProtectedRoute>
-                } 
-            />
-            <Route 
-                path="/patient/:patientId" 
-                element={
-                    <ProtectedRoute roles={['doctor']}>
+                    <ProtectedRoute roles={['MEDICO']}>
                         <Layout>
                             <PatientDetailPage />
                         </Layout>
@@ -71,9 +50,19 @@ const App: React.FC = () => {
                 } 
             />
              <Route 
-                path="/patient/:patientId/history/new" 
+                path="/history/new" 
                 element={
-                    <ProtectedRoute roles={['doctor']}>
+                    <ProtectedRoute roles={['MEDICO']}>
+                        <Layout>
+                            <HistoryFormPage />
+                        </Layout>
+                    </ProtectedRoute>
+                } 
+            />
+            <Route 
+                path="/history/new/:recordNumber" 
+                element={
+                    <ProtectedRoute roles={['MEDICO']}>
                         <Layout>
                             <HistoryFormPage />
                         </Layout>
@@ -83,7 +72,7 @@ const App: React.FC = () => {
             <Route 
                 path="/history/edit/:historyId" 
                 element={
-                    <ProtectedRoute roles={['doctor']}>
+                    <ProtectedRoute roles={['MEDICO']}>
                         <Layout>
                             <HistoryFormPage />
                         </Layout>
@@ -95,7 +84,7 @@ const App: React.FC = () => {
                 path="/" 
                 element={
                     user 
-                        ? (user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/patients" />)
+                        ? (user.role === 'ADMIN' ? <Navigate to="/admin" /> : <Navigate to="/patients" />)
                         : <Navigate to="/login" />
                 }
             />

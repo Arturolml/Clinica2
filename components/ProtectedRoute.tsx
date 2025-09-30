@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 interface ProtectedRouteProps {
     // FIX: Changed JSX.Element to React.ReactElement to avoid global JSX namespace issues.
     children: React.ReactElement;
-    roles: Array<'admin' | 'doctor'>;
+    roles: Array<'ADMIN' | 'MEDICO'>;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {

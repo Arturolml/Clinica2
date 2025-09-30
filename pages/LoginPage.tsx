@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { apiService } from '../services/apiService';
 
 const LoginPage: React.FC = () => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +17,9 @@ const LoginPage: React.FC = () => {
         setError(null);
 
         try {
-            const data = await apiService.post<{ token: string; user: any }>('auth/login', { username, password });
+            const data = await apiService.post<{ token: string; user: any }>('auth/login', { email, password });
             login(data.token, data.user);
-            navigate(data.user.role === 'admin' ? '/admin' : '/patients');
+            navigate(data.user.role === 'ADMIN' ? '/admin' : '/patients');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to login');
             setIsLoading(false);
@@ -32,14 +32,14 @@ const LoginPage: React.FC = () => {
                 <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Iniciar Sesión</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                            Usuario
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                            Email
                         </label>
                         <input
-                            id="username"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
                             className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                         />

@@ -5,8 +5,10 @@ export interface YesNoDetail {
 
 export interface User {
     id: number;
-    username: string;
-    role: 'admin' | 'doctor';
+    nombre: string;
+    apellidos: string;
+    email: string;
+    role: 'ADMIN' | 'MEDICO';
 }
 
 export interface Patient {
@@ -22,15 +24,24 @@ export interface Patient {
     registroGeriatria: string;
 }
 
+export interface UniquePatient {
+    ID_Paciente: number;
+    Nombre: string;
+    Apellidos: string;
+    Numero_Record: string;
+    Telefono: string;
+    Total_Historias: number;
+}
+
 
 // FIX: Expanded PatientData to include a snapshot of patient details for each history entry.
 export interface PatientData {
     fecha: string; // Date of the history entry
-    informadoPor: 'Paciente' | 'Familiar' | 'Ambos' | 'Otro' | '';
+    informadoPor: string;
     informadoPorOtro: string;
     nombre: string;
     apellidos: string;
-    fechaNacimiento: string;
+    edad: number | '';
     sexo: string;
     estadoCivil: string;
     direccion: string;
@@ -153,13 +164,11 @@ export interface HistoriaClinicaContent {
 // Represents the full clinical history record from the database
 export interface ClinicalHistory {
     id: number;
-    patient_id: number;
-    doctor_id: number;
     created_at: string;
+    doctor_id: number;
+    doctor_nombre: string;
+    doctor_apellidos: string;
     content: HistoriaClinicaContent;
-    patient?: Patient; // Optional: May be populated with patient details
-    // FIX: Added doctor_username to match API response for patient history list
-    doctor_username?: string;
 }
 
 
@@ -170,10 +179,9 @@ export const initialHistoriaClinicaContent: HistoriaClinicaContent = {
         fecha: new Date().toISOString().split('T')[0], 
         informadoPor: '', 
         informadoPorOtro: '',
-        // FIX: Initialize new fields for the patient data snapshot
         nombre: '',
         apellidos: '',
-        fechaNacimiento: '',
+        edad: '',
         sexo: '',
         estadoCivil: '',
         direccion: '',

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PatientData as PatientDataType } from '../../types';
 import { InputField } from '../common/InputField';
@@ -18,8 +17,7 @@ export const PatientData: React.FC<Props> = ({ data, onChange }) => {
                 <InputField label="Fecha" id="fecha" type="date" value={data.fecha} onChange={e => onChange('fecha', e.target.value)} />
                 <InputField label="Nombre" id="nombre" value={data.nombre} onChange={e => onChange('nombre', e.target.value)} />
                 <InputField label="Apellidos" id="apellidos" value={data.apellidos} onChange={e => onChange('apellidos', e.target.value)} />
-                {/* FIX: Replaced 'edad' field with 'fechaNacimiento' to align with data model and fix type errors. */}
-                <InputField label="Fecha de Nacimiento" id="fechaNacimiento" type="date" value={data.fechaNacimiento} onChange={e => onChange('fechaNacimiento', e.target.value)} />
+                <InputField label="Edad" id="edad" type="number" value={data.edad} onChange={e => onChange('edad', e.target.value)} />
                 <SelectField 
                     label="Sexo" 
                     id="sexo" 

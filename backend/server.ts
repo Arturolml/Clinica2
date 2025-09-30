@@ -1,5 +1,5 @@
-// FIX: Alias Request and Response to avoid type conflicts
-import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+// FIX: Removed aliased Request and Response to avoid type conflicts.
+import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -15,7 +15,7 @@ const port = process.env.PORT || 3001;
 
 // Middleware setup
 app.use(cors());
-// FIX: The error on this line was a symptom of the type conflict, resolved by aliasing.
+// FIX: The error on this line was a symptom of the type conflict, resolved by using explicit types throughout the backend.
 app.use(express.json({ limit: '10mb' })); 
 
 // API Routes
@@ -25,8 +25,8 @@ app.use('/api/patients', patientRoutes);
 app.use('/api/histories', historyRoutes);
 
 // Health check endpoint
-// FIX: Use aliased types for request and response objects.
-app.get('/', (req: ExpressRequest, res: ExpressResponse) => {
+// FIX: Use explicit express.Request and express.Response types to avoid global type conflicts.
+app.get('/', (req: express.Request, res: express.Response) => {
     res.send('Clinical History Backend is running.');
 });
 

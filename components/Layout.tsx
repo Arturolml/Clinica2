@@ -18,7 +18,7 @@ const Header: React.FC = () => {
                 <div className="flex items-center">
                     {user && (
                         <div className="text-right mr-4">
-                            <p className="font-semibold text-gray-700">{user.username}</p>
+                            <p className="font-semibold text-gray-700">{user.nombre} {user.apellidos}</p>
                             <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                         </div>
                     )}

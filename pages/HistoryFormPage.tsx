@@ -33,12 +33,12 @@ const sectionNames: Record<SectionKey, string> = {
 };
 
 const HistoryFormPage: React.FC = () => {
-    const { patientId, historyId } = useParams<{ patientId?: string, historyId?: string }>();
+    const { recordNumber, historyId } = useParams<{ recordNumber?: string, historyId?: string }>();
     const navigate = useNavigate();
     const isEditing = Boolean(historyId);
 
     const [formData, setFormData] = useState<HistoriaClinicaContent>(initialHistoriaClinicaContent);
-    const [patient, setPatient] = useState<Patient | null>(null);
+    const [patientInfo, setPatientInfo] = useState<{nombre: string, apellidos: string} | null>(null);
     const [activeSection, setActiveSection] = useState<SectionKey>('patientData');
     const [summary, setSummary] = useState<string>('');
     const [isLoadingSummary, setIsLoadingSummary] = useState<boolean>(false);
@@ -46,35 +46,44 @@ const HistoryFormPage: React.FC = () => {
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [saveStatus, setSaveStatus] = useState<'success' | 'error' | null>(null);
     
-    // FIX: Refactored data loading and added pre-population for new history entries.
     useEffect(() => {
         const loadData = async () => {
             try {
                 if (isEditing && historyId) {
+                    // Editing an existing history
                     const historyData = await apiService.get<ClinicalHistory>(`histories/${historyId}`);
                     setFormData(historyData.content);
-                    const patientData = await apiService.get<Patient>(`patients/${historyData.patient_id}`);
-                    setPatient(patientData);
-                } else if (patientId) {
-                    const patientData = await apiService.get<Patient>(`patients/${patientId}`);
-                    setPatient(patientData);
-                    // Pre-fill form for a new history entry with the patient's current data as a snapshot
+                    setPatientInfo({ nombre: historyData.content.patientData.nombre, apellidos: historyData.content.patientData.apellidos });
+                } else if (recordNumber) {
+                    // Creating a new history for an existing patient
+                    const patientData = await apiService.get<any>(`patients/record/${recordNumber}`);
+                    setPatientInfo({ nombre: patientData.Nombre, apellidos: patientData.Apellidos });
+                    // Pre-fill form with the latest data for this patient record
                     setFormData(prev => ({
                         ...prev,
                         patientData: {
-                            ...prev.patientData, // Keep history-specific initial values like 'fecha'
-                            ...patientData,     // Spread patient details
-                            id: undefined,      // Remove patient id from snapshot
-                            fechaNacimiento: patientData.fechaNacimiento.split('T')[0], // Format date
-                        } as any,
+                            ...prev.patientData,
+                            nombre: patientData.Nombre,
+                            apellidos: patientData.Apellidos,
+                            edad: patientData.Edad,
+                            sexo: patientData.Sexo, // Note: This assumes direct mapping, might need conversion from ID
+                            estadoCivil: patientData.EstadoCivil, // Note: This assumes direct mapping
+                            direccion: patientData.Direccion,
+                            telefono: patientData.Telefono,
+                            numeroRecord: patientData.Numero_Record,
+                            registroGeriatria: patientData.Registro_Geriatria,
+                        },
                     }));
+                } else {
+                    // Creating a new history for a completely new patient
+                    setPatientInfo({ nombre: 'Nuevo', apellidos: 'Paciente' });
                 }
             } catch (err) {
                  setError(err instanceof Error ? err.message : 'Failed to load data');
             }
         }
         loadData();
-    }, [patientId, historyId, isEditing]);
+    }, [recordNumber, historyId, isEditing]);
 
     const handleInputChange = useCallback((section: keyof HistoriaClinicaContent, field: string, value: any, subField?: string, index?: number) => {
         setFormData(prevData => {
@@ -93,7 +102,7 @@ const HistoryFormPage: React.FC = () => {
     }, []);
 
     const handleGenerateSummary = async () => {
-        if (!patient) {
+        if (!formData.patientData.nombre) {
             setError('Datos del paciente no cargados.');
             return;
         }
@@ -101,11 +110,24 @@ const HistoryFormPage: React.FC = () => {
         setError(null);
         setSummary('');
         try {
-            const result = await generateSummary(patient, formData);
+            // The AI service expects a Patient object, but we have PatientData.
+            // We'll create a mock Patient object for the summary generation.
+            const mockPatient: Patient = {
+                id: 0,
+                nombre: formData.patientData.nombre,
+                apellidos: formData.patientData.apellidos,
+                fechaNacimiento: '', // Not available in new schema, AI prompt needs adjustment
+                sexo: formData.patientData.sexo,
+                estadoCivil: formData.patientData.estadoCivil,
+                direccion: formData.patientData.direccion,
+                telefono: formData.patientData.telefono,
+                numeroRecord: formData.patientData.numeroRecord,
+                registroGeriatria: formData.patientData.registroGeriatria,
+            }
+            const result = await generateSummary(mockPatient, formData);
             setSummary(result);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-            setSaveStatus(null);
         } finally {
             setIsLoadingSummary(false);
         }
@@ -115,10 +137,11 @@ const HistoryFormPage: React.FC = () => {
         setIsSaving(true);
         setSaveStatus(null);
         setError(null);
-        const finalPatientId = patient?.id;
-        if(!finalPatientId) {
-            setError("No se ha podido identificar al paciente.");
+
+        if(!formData.patientData.numeroRecord || !formData.patientData.nombre || !formData.patientData.apellidos) {
+            setError("Nombre, Apellidos y Número de Record son campos obligatorios.");
             setIsSaving(false);
+            setActiveSection('patientData');
             return;
         }
 
@@ -126,10 +149,10 @@ const HistoryFormPage: React.FC = () => {
             if (isEditing) {
                 await apiService.put(`histories/${historyId}`, { content: formData });
             } else {
-                await apiService.post('histories', { patientId: finalPatientId, content: formData });
+                await apiService.post('histories', { content: formData });
             }
             setSaveStatus('success');
-            setTimeout(() => navigate(`/patient/${finalPatientId}`), 2000);
+            setTimeout(() => navigate(`/patient/record/${formData.patientData.numeroRecord}`), 2000);
         } catch (err) {
             setSaveStatus('error');
             setError(err instanceof Error ? err.message : 'Ocurrió un error de red o de servidor.');
@@ -140,7 +163,7 @@ const HistoryFormPage: React.FC = () => {
 
     const ActiveComponent = sectionComponents[activeSection];
     
-    if(!patient) return <div>Cargando...</div>
+    if(!patientInfo) return <div>Cargando...</div>
 
     return (
         <div className="font-sans text-gray-800">
@@ -150,7 +173,7 @@ const HistoryFormPage: React.FC = () => {
                         <IconDocument className="h-8 w-8 text-primary-600" />
                         <div>
                            <h1 className="text-xl font-bold text-gray-800">{isEditing ? 'Editar Historia Clínica' : 'Nueva Historia Clínica'}</h1>
-                           <p className="text-sm text-gray-600">Paciente: {patient.nombre} {patient.apellidos}</p>
+                           <p className="text-sm text-gray-600">Paciente: {patientInfo.nombre} {patientInfo.apellidos}</p>
                         </div>
                     </div>
                     <div className="flex items-center space-x-4">
@@ -178,6 +201,12 @@ const HistoryFormPage: React.FC = () => {
                 <div className="mb-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4" role="alert">
                     <p className="font-bold">Éxito</p>
                     <p>La historia clínica se ha guardado correctamente. Redirigiendo...</p>
+                </div>
+            )}
+            {error && (
+                 <div className="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+                    <p className="font-bold">Error</p>
+                    <p>{error}</p>
                 </div>
             )}
 
@@ -211,12 +240,11 @@ const HistoryFormPage: React.FC = () => {
                 </div>
             </div>
 
-            {(summary || error) && (
+            {(summary || (error && isLoadingSummary)) && (
                 <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
                     <h2 className="text-xl font-bold mb-4 text-gray-800">{error && !summary ? 'Error' : 'Resumen Generado por IA'}</h2>
-                    {error && <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert"><p>{error}</p></div>}
-                    {summary && (
-                        <div className="prose max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: summary }} />
+                     {summary && (
+                        <div className="prose max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: summary.replace(/\n/g, '<br />') }} />
                     )}
                 </div>
             )}

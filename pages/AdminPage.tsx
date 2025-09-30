@@ -3,7 +3,9 @@ import { apiService } from '../services/apiService';
 import { SectionTitle } from '../components/common/SectionTitle';
 
 const AdminPage: React.FC = () => {
-    const [username, setUsername] = useState('');
+    const [nombre, setNombre] = useState('');
+    const [apellidos, setApellidos] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -14,9 +16,11 @@ const AdminPage: React.FC = () => {
         setMessage(null);
 
         try {
-            await apiService.post('users/register-doctor', { username, password });
-            setMessage({ type: 'success', text: `Doctor "${username}" creado exitosamente.` });
-            setUsername('');
+            await apiService.post('users/register-doctor', { nombre, apellidos, email, password });
+            setMessage({ type: 'success', text: `Doctor "${nombre} ${apellidos}" creado exitosamente.` });
+            setNombre('');
+            setApellidos('');
+            setEmail('');
             setPassword('');
         } catch (err) {
             setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Error al crear el doctor.' });
@@ -32,15 +36,41 @@ const AdminPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-700 mb-4">Crear Nuevo Doctor</h3>
             
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                        Usuario del Doctor
+                 <div>
+                    <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+                        Nombre del Doctor
                     </label>
                     <input
-                        id="username"
+                        id="nombre"
                         type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        required
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    />
+                </div>
+                 <div>
+                    <label htmlFor="apellidos" className="block text-sm font-medium text-gray-700">
+                        Apellidos del Doctor
+                    </label>
+                    <input
+                        id="apellidos"
+                        type="text"
+                        value={apellidos}
+                        onChange={(e) => setApellidos(e.target.value)}
+                        required
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                        Email del Doctor
+                    </label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                         className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                     />

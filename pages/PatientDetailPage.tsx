@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { apiService } from '../services/apiService';
-import { Patient, ClinicalHistory } from '../types';
-import { SectionTitle } from '../components/common/SectionTitle';
+import { ClinicalHistory } from '../types';
+
+interface PatientDemographics {
+    ID_Paciente: number;
+    Nombre: string;
+    Apellidos: string;
+    Edad: number;
+    Sexo_ID: number;
+    EstadoCivil_ID: number;
+    Direccion: string;
+    Telefono: string;
+    Numero_Record: string;
+}
 
 const PatientDetailPage: React.FC = () => {
-    const { patientId } = useParams<{ patientId: string }>();
-    const navigate = useNavigate();
-    const [patient, setPatient] = useState<Patient | null>(null);
+    const { recordNumber } = useParams<{ recordNumber: string }>();
+    const [patient, setPatient] = useState<PatientDemographics | null>(null);
     const [histories, setHistories] = useState<ClinicalHistory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!patientId) return;
+            if (!recordNumber) return;
             try {
-                const patientData = await apiService.get<Patient>(`patients/${patientId}`);
+                // Fetch latest patient demographics
+                const patientData = await apiService.get<PatientDemographics>(`patients/record/${recordNumber}`);
                 setPatient(patientData);
-                const historyData = await apiService.get<ClinicalHistory[]>(`histories/patient/${patientId}`);
+                // Fetch all histories for this patient record
+                const historyData = await apiService.get<ClinicalHistory[]>(`histories/patient/record/${recordNumber}`);
                 setHistories(historyData);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -27,19 +39,10 @@ const PatientDetailPage: React.FC = () => {
             }
         };
         fetchData();
-    }, [patientId]);
+    }, [recordNumber]);
     
-    const handleDeleteHistory = async (historyId: number) => {
-         if (window.confirm('¿Está seguro de que desea eliminar este historial clínico?')) {
-            try {
-                await apiService.delete(`histories/${historyId}`);
-                setHistories(histories.filter(h => h.id !== historyId));
-            } catch (err) {
-                alert(err instanceof Error ? err.message : 'Failed to delete history');
-            }
-        }
-    }
-
+    // Deletion would be complex as it might involve deleting a PACIENTE record and all its dependencies.
+    // This is left out for simplicity under the new schema.
 
     if (isLoading) return <div>Cargando...</div>;
     if (error) return <div className="text-red-500">Error: {error}</div>;
@@ -49,32 +52,31 @@ const PatientDetailPage: React.FC = () => {
         <div className="space-y-8">
             <div className="bg-white p-6 rounded-lg shadow-lg">
                 <div className="flex justify-between items-start">
-                    <SectionTitle>Datos del Paciente</SectionTitle>
-                    <Link to={`/patient/edit/${patient.id}`} className="text-sm px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200">Editar Paciente</Link>
+                    <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b-2 border-primary-200 pb-2">
+                        Datos del Paciente (Último Registro)
+                    </h2>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div><strong>Nombre:</strong> {patient.nombre} {patient.apellidos}</div>
-                    <div><strong>Nº Record:</strong> {patient.numeroRecord}</div>
-                    <div><strong>Fecha Nacimiento:</strong> {new Date(patient.fechaNacimiento).toLocaleDateString()}</div>
-                    <div><strong>Sexo:</strong> {patient.sexo}</div>
-                    <div><strong>Estado Civil:</strong> {patient.estadoCivil}</div>
-                    <div><strong>Teléfono:</strong> {patient.telefono}</div>
-                    <div className="col-span-2"><strong>Dirección:</strong> {patient.direccion}</div>
+                    <div><strong>Nombre:</strong> {patient.Nombre} {patient.Apellidos}</div>
+                    <div><strong>Nº Record:</strong> {patient.Numero_Record}</div>
+                    <div><strong>Edad:</strong> {patient.Edad}</div>
+                    <div><strong>Teléfono:</strong> {patient.Telefono}</div>
+                    <div className="col-span-2"><strong>Dirección:</strong> {patient.Direccion}</div>
                 </div>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-lg">
                  <div className="flex justify-between items-center mb-6">
-                    <SectionTitle>Historiales Clínicos</SectionTitle>
-                    <Link to={`/patient/${patientId}/history/new`} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition duration-200">
-                        + Nuevo Historial
+                    <h2 className="text-xl font-semibold text-gray-800 border-b-2 border-primary-200 pb-2">Historiales Clínicos</h2>
+                    <Link to={`/history/new/${recordNumber}`} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition duration-200">
+                        + Nuevo Historial para este Paciente
                     </Link>
                 </div>
                 <div className="overflow-x-auto">
                      <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de Creación</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Doctor</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                             </tr>
@@ -83,10 +85,9 @@ const PatientDetailPage: React.FC = () => {
                             {histories.map(history => (
                                 <tr key={history.id}>
                                     <td className="px-4 py-3">{new Date(history.created_at).toLocaleString()}</td>
-                                    <td className="px-4 py-3">{history.doctor_username}</td>
+                                    <td className="px-4 py-3">{history.doctor_nombre} {history.doctor_apellidos}</td>
                                     <td className="px-4 py-3 space-x-3 text-sm">
                                         <Link to={`/history/edit/${history.id}`} className="text-indigo-600 hover:text-indigo-900">Editar/Ver</Link>
-                                        <button onClick={() => handleDeleteHistory(history.id)} className="text-red-600 hover:text-red-900">Eliminar</button>
                                     </td>
                                 </tr>
                             ))}
