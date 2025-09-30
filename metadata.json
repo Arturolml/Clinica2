@@ -1,0 +1,5 @@
+{
+  "name": "Clinical History Form AI",
+  "description": "A web application to digitize a comprehensive clinical history form for geriatric patients, featuring an AI-powered summary generation tool using the Gemini API.",
+  "requestFramePermissions": []
+}
